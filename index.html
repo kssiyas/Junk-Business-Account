@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="theme-color" content="#FF6B35"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="JunkBiz"/>
+<title>JunkBiz</title>
+<link rel="manifest" href="manifest.json"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0A0E1A;--card:#16203A;--border:#1E2D4A;
+  --orange:#FF6B35;--orange2:#FF9F1C;
+  --green:#00C896;--red:#FF4560;
+  --blue:#3D8EFF;--purple:#A855F7;
+  --text:#F0F4FF;--muted:#5A6A8A;--faint:#0F1828;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Poppins',sans-serif;color:var(--text)}
+body{display:flex;flex-direction:column;height:100dvh}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.sp-t{font-size:72px;animation:bob 1.3s ease-in-out infinite}
+.sp-n{font-size:26px;font-weight:900;background:linear-gradient(135deg,var(--orange),var(--orange2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-top:8px}
+.sp-s{font-size:12px;color:var(--muted);margin-bottom:22px}
+.sp-bar{width:160px;height:4px;background:var(--faint);border-radius:4px;overflow:hidden}
+.sp-f{height:100%;background:linear-gradient(90deg,var(--orange),var(--orange2));width:0;transition:width .15s}
+
+/* HEADER */
+.hdr{flex-shrink:0;background:var(--faint);border-bottom:1px solid var(--border);padding:max(env(safe-area-inset-top),12px) 16px 12px}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-ico{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--orange),var(--orange2));display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 12px rgba(255,107,53,.4)}
+.logo-n{font-size:17px;font-weight:800}
+.logo-s{font-size:10px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:4px;margin-top:1px}
+.ldot{width:6px;height:6px;border-radius:50%;background:var(--orange2);animation:pulse 2s infinite;flex-shrink:0}
+.sync-btn{background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--muted);padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;gap:6px}
+.sync-btn:active{opacity:.7}
+.sync-btn:disabled{opacity:.4;cursor:not-allowed}
+.mspin{width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite}
+
+/* LIVE INDICATOR */
+.live-bar{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:7px 12px;margin-bottom:10px;font-size:11px;font-weight:600}
+.live-bar.syncing{border-color:var(--orange2)}
+.live-bar.live{border-color:var(--green)}
+.live-bar.offline{border-color:var(--muted)}
+.lb-left{display:flex;align-items:center;gap:7px;color:var(--muted)}
+.lb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.live-bar.syncing .lb-dot{background:var(--orange2);animation:pulse .8s infinite}
+.live-bar.live .lb-dot{background:var(--green)}
+.live-bar.offline .lb-dot{background:var(--muted)}
+.lb-right{font-size:10px;color:var(--muted)}
+
+/* MONTH NAV */
+.mnav{display:flex;align-items:center;justify-content:center;gap:16px}
+.marr{width:36px;height:36px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700}
+.marr:active{background:var(--border);transform:scale(.9)}
+.mlbl{font-size:17px;font-weight:800;min-width:140px;text-align:center}
+
+/* PAGES */
+.pages{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px 100px;display:none}
+.page.on{display:block;animation:pop .2s ease}
+
+/* BOTTOM NAV */
+.bnav{flex-shrink:0;display:flex;background:var(--faint);border-top:1px solid var(--border);padding-bottom:max(env(safe-area-inset-bottom),4px)}
+.nib{flex:1;border:none;background:none;cursor:pointer;padding:10px 0 5px;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:'Poppins',sans-serif}
+.nib:active{transform:scale(.85)}
+.nib-i{font-size:22px;line-height:1}
+.nib-l{font-size:10px;font-weight:700;color:var(--muted)}
+.nib.on .nib-l{color:var(--orange)}
+.nib-d{width:20px;height:3px;border-radius:3px;background:var(--orange);opacity:0;margin-top:2px}
+.nib.on .nib-d{opacity:1}
+
+/* STAT BOXES */
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.sbox{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 8px;text-align:center;position:relative;overflow:hidden}
+.sbox::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
+.sbox.i::after{background:var(--green)}.sbox.e::after{background:var(--red)}.sbox.p::after{background:linear-gradient(90deg,var(--orange),var(--orange2))}
+.sbox-ico{font-size:22px;margin-bottom:4px}
+.sbox-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:4px}
+.sbox-val{font-size:15px;font-weight:900;line-height:1}
+.cg{color:var(--green)}.cr{color:var(--red)}.co{color:var(--orange)}
+
+/* SHARE CARD */
+.sharecard{background:linear-gradient(135deg,#1A1040,#16203A);border:1.5px solid #3D2B6B;border-radius:18px;padding:22px 16px;margin-bottom:12px;text-align:center;position:relative;overflow:hidden}
+.sharecard::before{content:'🤝';position:absolute;right:-8px;top:-8px;font-size:80px;opacity:.05}
+.sc-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
+.sc-amt{font-size:46px;font-weight:900;line-height:1;background:linear-gradient(135deg,var(--orange),var(--orange2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sc-sub{font-size:12px;color:var(--muted);margin-top:6px}
+
+/* PARTNER CARDS */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.pc{background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:14px}
+.pc.s{border-color:#1A3566}.pc.r{border-color:#2D1B5E}
+.pc-head{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.pc-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.pc.s .pc-ico{background:linear-gradient(135deg,#1A3566,#2A5A9A)}
+.pc.r .pc-ico{background:linear-gradient(135deg,#2D1B5E,#5A2A9A)}
+.pc-name{font-size:13px;font-weight:800}
+.pc.s .pc-name{color:var(--blue)}.pc.r .pc-name{color:var(--purple)}
+.pc-row{display:flex;justify-content:space-between;margin-bottom:6px}
+.pc-lbl{font-size:10px;color:var(--muted);font-weight:600}
+.pc-val{font-size:12px;font-weight:800}
+.sep{height:1px;background:var(--border);margin:8px 0}
+.pc-net-row{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+.pc-net-lbl{font-size:10px;color:var(--muted);font-weight:600}
+.pc-net-val{font-size:14px;font-weight:900}
+
+/* SETTLEMENT CARD */
+.settle{border-radius:16px;padding:16px;margin-bottom:12px}
+.settle.warn{background:linear-gradient(135deg,#2A1400,#1A0E00);border:1.5px solid rgba(255,159,28,.3)}
+.settle.ok{background:linear-gradient(135deg,#001E14,#001208);border:1.5px solid rgba(0,200,150,.25)}
+.settle.even{background:linear-gradient(135deg,#001E14,#001208);border:1.5px solid rgba(0,200,150,.25)}
+.settle-t{font-size:13px;font-weight:800;margin-bottom:8px}
+.settle-body{font-size:13px;line-height:1.8;color:var(--muted)}
+.settle-amt{font-size:28px;font-weight:900;color:var(--orange2);display:block;margin:6px 0 2px}
+.settle-note{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5;border-top:1px solid rgba(255,255,255,.05);padding-top:8px}
+
+/* SECTION LABEL */
+.slbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:14px 0 8px}
+
+/* ENTRY CARD */
+.ec{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:12px 12px 12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:10px;position:relative;overflow:hidden;animation:fadein .2s ease}
+.ec::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px}
+.ec.inc::before{background:var(--green)}.ec.exp::before{background:var(--red)}
+.ec-ico{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.ec.inc .ec-ico{background:rgba(0,200,150,.1)}.ec.exp .ec-ico{background:rgba(255,69,96,.1)}
+.ec-info{flex:1;min-width:0}
+.ec-desc{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.ec-meta{display:flex;gap:6px;align-items:center}
+.ec-badge{font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;text-transform:uppercase}
+.ec.inc .ec-badge{background:rgba(0,200,150,.15);color:var(--green)}
+.ec.exp .ec-badge{background:rgba(255,69,96,.15);color:var(--red)}
+.ec-who{font-size:10px;color:var(--muted);font-weight:600}
+.ec-right{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.ec-amt{font-size:15px;font-weight:900}
+.ec.inc .ec-amt{color:var(--green)}.ec.exp .ec-amt{color:var(--red)}
+.ec-actions{display:flex;gap:5px}
+.ec-edit{background:rgba(61,142,255,.12);border:none;border-radius:8px;color:var(--blue);width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px}
+.ec-edit:active{background:rgba(61,142,255,.3)}
+.ec-del{background:rgba(255,69,96,.1);border:none;border-radius:8px;color:var(--red);width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px}
+.ec-del:active{background:rgba(255,69,96,.3)}
+
+/* NO DATA */
+.nodata{text-align:center;padding:44px 20px}
+.nodata-ico{font-size:56px;margin-bottom:12px;opacity:.7}
+.nodata-t{font-size:16px;font-weight:700;margin-bottom:8px}
+.nodata-s{font-size:13px;color:var(--muted);line-height:1.7}
+
+/* ADD FORM */
+.fwrap{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px}
+.f-title{font-size:15px;font-weight:800;margin-bottom:16px}
+.tog-row{display:flex;background:var(--faint);border-radius:12px;padding:4px;gap:4px;margin-bottom:16px}
+.tog{flex:1;padding:12px;border-radius:9px;border:1.5px solid transparent;cursor:pointer;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s}
+.tog.ti{background:rgba(0,200,150,.12);color:var(--green);border-color:var(--green)}
+.tog.te{background:rgba(255,69,96,.12);color:var(--red);border-color:var(--red)}
+.tog:active{transform:scale(.96)}
+.flbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:7px}
+.fg{margin-bottom:14px}
+.iw{position:relative}
+.ii{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:17px;pointer-events:none}
+input[type=text],input[type=number]{width:100%;padding:15px 15px 15px 42px;background:var(--faint);border:1.5px solid var(--border);border-radius:12px;color:var(--text);font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;outline:none;-webkit-appearance:none}
+input:focus{border-color:var(--orange)}
+input::placeholder{color:var(--muted);font-weight:400}
+.who-row{display:flex;gap:8px;margin-bottom:18px}
+.wb{flex:1;border-radius:12px;border:1.5px solid var(--border);background:var(--faint);cursor:pointer;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;color:var(--muted);padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .2s}
+.wb .wi{font-size:26px}
+.wb.ws{background:#0D1F3A;border-color:var(--blue);color:var(--blue)}
+.wb.wr{background:#1A0F30;border-color:var(--purple);color:var(--purple)}
+.wb:active{transform:scale(.95)}
+.save-btn{width:100%;padding:17px;border-radius:14px;border:none;cursor:pointer;font-family:'Poppins',sans-serif;font-size:16px;font-weight:900;background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;box-shadow:0 8px 24px rgba(255,107,53,.3);display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s}
+.save-btn:active{transform:scale(.98)}
+.save-btn:disabled{background:var(--border);box-shadow:none;color:var(--muted);cursor:not-allowed}
+.save-hint{text-align:center;font-size:11px;color:var(--muted);margin-top:9px}
+
+/* HISTORY */
+.hh{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.hh-t{font-size:15px;font-weight:800}
+.hh-c{font-size:11px;color:var(--muted);margin-top:1px}
+.mi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px 16px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.mi.cur{border-color:var(--orange);background:rgba(255,107,53,.07)}
+.mi:active{opacity:.8}
+.mi-n{font-size:13px;font-weight:700}
+.mi-v{display:flex;gap:12px}
+.miv{font-size:12px;font-weight:800}
+
+/* EDIT MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:8000;display:flex;align-items:flex-end;justify-content:center}
+.modal-bg.hidden{display:none}
+.modal{background:var(--card);border-radius:22px 22px 0 0;border:1px solid var(--border);padding:20px 18px 40px;width:100%;max-width:480px;animation:pop .25s ease}
+.modal-title{font-size:15px;font-weight:800;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:var(--faint);border:none;border-radius:8px;color:var(--muted);width:32px;height:32px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* TOAST */
+.toast{position:fixed;top:68px;left:50%;transform:translateX(-50%) translateY(-14px);z-index:9999;padding:11px 22px;border-radius:24px;font-size:13px;font-weight:700;box-shadow:0 6px 24px rgba(0,0,0,.5);color:#fff;white-space:nowrap;pointer-events:none;opacity:0;transition:all .25s cubic-bezier(.34,1.56,.64,1)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.tg{background:linear-gradient(135deg,#00C896,#009E76)}
+.tr{background:linear-gradient(135deg,#FF4560,#CC2240)}
+.tb{background:linear-gradient(135deg,#3D8EFF,#1A6ADD)}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="sp-t">🚛</div>
+  <div class="sp-n">JunkBiz</div>
+  <div class="sp-s">Siyas & Ramiz · Business Tracker</div>
+  <div class="sp-bar"><div class="sp-f" id="spf"></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div id="app" style="display:none;flex-direction:column;height:100dvh">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="logo">
+        <div class="logo-ico">🚛</div>
+        <div>
+          <div class="logo-n">JunkBiz</div>
+          <div class="logo-s"><div class="ldot" id="ldot"></div><span id="lst">Connecting…</span></div>
+        </div>
+      </div>
+      <button class="sync-btn" id="sbtn" onclick="manualSync()">🔄 Sync</button>
+    </div>
+    <div class="mnav">
+      <button class="marr" onclick="prevM()">‹</button>
+      <div class="mlbl" id="mlbl"></div>
+      <button class="marr" onclick="nextM()">›</button>
+    </div>
+  </div>
+
+  <!-- PAGES -->
+  <div class="pages">
+
+    <!-- SUMMARY -->
+    <div class="page on" id="pg-s">
+      <div class="live-bar offline" id="livebar">
+        <div class="lb-left"><div class="lb-dot" id="lbdot"></div><span id="lbtxt">Loading…</span></div>
+        <div class="lb-right" id="lbtime"></div>
+      </div>
+
+      <div class="stats3">
+        <div class="sbox i"><div class="sbox-ico">💰</div><div class="sbox-lbl">Income</div><div class="sbox-val cg" id="v-inc">$0.00</div></div>
+        <div class="sbox e"><div class="sbox-ico">📤</div><div class="sbox-lbl">Expenses</div><div class="sbox-val cr" id="v-exp">$0.00</div></div>
+        <div class="sbox p"><div class="sbox-ico">📈</div><div class="sbox-lbl">Net Profit</div><div class="sbox-val co" id="v-net">$0.00</div></div>
+      </div>
+
+      <div class="sharecard">
+        <div class="sc-lbl">Each Partner Earns This Month</div>
+        <div class="sc-amt" id="v-each">$0.00</div>
+        <div class="sc-sub">Net Profit ÷ 2 · Perfect 50/50 Split</div>
+      </div>
+
+      <div class="slbl">Partner Breakdown</div>
+      <div class="pgrid">
+        <div class="pc s">
+          <div class="pc-head"><div class="pc-ico">👤</div><div class="pc-name">Siyas</div></div>
+          <div class="pc-row"><span class="pc-lbl">💰 Collected</span><span class="pc-val cg" id="s0i">$0.00</span></div>
+          <div class="pc-row"><span class="pc-lbl">📤 Paid Out</span><span class="pc-val cr" id="s0e">$0.00</span></div>
+          <div class="sep"></div>
+          <div class="pc-net-row"><span class="pc-net-lbl">🏆 Fair Share</span><span class="pc-net-val co" id="s0n">$0.00</span></div>
+        </div>
+        <div class="pc r">
+          <div class="pc-head"><div class="pc-ico">👥</div><div class="pc-name">Ramiz</div></div>
+          <div class="pc-row"><span class="pc-lbl">💰 Collected</span><span class="pc-val cg" id="s1i">$0.00</span></div>
+          <div class="pc-row"><span class="pc-lbl">📤 Paid Out</span><span class="pc-val cr" id="s1e">$0.00</span></div>
+          <div class="sep"></div>
+          <div class="pc-net-row"><span class="pc-net-lbl">🏆 Fair Share</span><span class="pc-net-val co" id="s1n">$0.00</span></div>
+        </div>
+      </div>
+
+      <div id="v-settle"></div>
+      <div class="slbl">Recent Entries</div>
+      <div id="v-list"></div>
+    </div>
+
+    <!-- ADD ENTRY -->
+    <div class="page" id="pg-a">
+      <div class="fwrap">
+        <div class="f-title">➕ Add Entry · <span id="f-mlbl" style="color:var(--muted);font-weight:600;font-size:13px"></span></div>
+        <div class="tog-row">
+          <button class="tog ti" id="ti" onclick="setT('income')">💰 Income</button>
+          <button class="tog" id="te" onclick="setT('expense')">📤 Expense</button>
+        </div>
+        <div class="fg">
+          <label class="flbl">Description</label>
+          <div class="iw"><span class="ii" id="dico">🏠</span><input type="text" id="fi" placeholder="e.g. Junk removal – Oak Street" autocomplete="off"/></div>
+        </div>
+        <div class="fg">
+          <label class="flbl">Amount ($)</label>
+          <div class="iw"><span class="ii">💵</span><input type="number" id="fa" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>
+        </div>
+        <label class="flbl" id="wlbl" style="margin-bottom:10px">Who collected this?</label>
+        <div class="who-row">
+          <button class="wb ws" id="wb0" onclick="setW(0)">
+            <span class="wi">👤</span>
+            <span style="font-size:15px;font-weight:800">Siyas</span>
+          </button>
+          <button class="wb" id="wb1" onclick="setW(1)">
+            <span class="wi">👥</span>
+            <span style="font-size:15px;font-weight:800">Ramiz</span>
+          </button>
+        </div>
+        <button class="save-btn" id="savebtn" onclick="doSave()">☁️ Save Income</button>
+        <div class="save-hint">Saves instantly · Both partners see it</div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="page" id="pg-h">
+      <div class="hh">
+        <div><div class="hh-t" id="ht"></div><div class="hh-c" id="hc"></div></div>
+        <button class="sync-btn" onclick="manualSync()">🔄 Sync</button>
+      </div>
+      <div id="he"></div>
+      <div id="hm" style="margin-top:16px"></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bnav">
+    <button class="nib on" id="nb-s" onclick="goT('s')"><div class="nib-i">📊</div><div class="nib-l">Summary</div><div class="nib-d"></div></button>
+    <button class="nib" id="nb-a" onclick="goT('a')"><div class="nib-i">➕</div><div class="nib-l">Add Entry</div><div class="nib-d"></div></button>
+    <button class="nib" id="nb-h" onclick="goT('h')"><div class="nib-i">📋</div><div class="nib-l">History</div><div class="nib-d"></div></button>
+  </div>
+
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-bg hidden" id="edit-modal" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal">
+    <div class="modal-title">✏️ Edit Entry <button class="modal-close" onclick="closeEditModal()">✕</button></div>
+    <div class="tog-row">
+      <button class="tog ti" id="eti" onclick="setET('income')">💰 Income</button>
+      <button class="tog" id="ete" onclick="setET('expense')">📤 Expense</button>
+    </div>
+    <div class="fg">
+      <label class="flbl">Description</label>
+      <div class="iw"><span class="ii" id="edico">🏠</span><input type="text" id="efi" placeholder="Description" autocomplete="off"/></div>
+    </div>
+    <div class="fg">
+      <label class="flbl">Amount ($)</label>
+      <div class="iw"><span class="ii">💵</span><input type="number" id="efa" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/></div>
+    </div>
+    <label class="flbl" style="margin-bottom:10px">Who?</label>
+    <div class="who-row">
+      <button class="wb ws" id="ewb0" onclick="setEW(0)">
+        <span class="wi">👤</span><span style="font-size:15px;font-weight:800">Siyas</span>
+      </button>
+      <button class="wb" id="ewb1" onclick="setEW(1)">
+        <span class="wi">👥</span><span style="font-size:15px;font-weight:800">Ramiz</span>
+      </button>
+    </div>
+    <button class="save-btn" onclick="doEdit()">💾 Save Changes</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// CONFIG  — your Google Apps Script URL
+// ════════════════════════════════════════════════════════
+const GAS   = "https://script.google.com/macros/s/AKfycbxG3NdUQgQ38wUPbgvJBNXFIMNgrUQ_LDfErk817Nf71qpD9sLERC4BaGT2QjYXwu0w/exec";
+const NAMES = ["Siyas","Ramiz"];
+const MNS   = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const FULL  = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const SK     = "junkbiz_v7";
+const SK_DEL = "junkbiz_del_v7";
+
+// ════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════
+let DATA    = [];
+let DELETED = new Set();
+let tab = "s", eT = "income", eW = 0;
+let editId = null, eET = "income", eEW = 0;
+
+const now = new Date();
+let CY = now.getFullYear(), CM = now.getMonth() + 1;
+
+// ════════════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════════════
+const $   = id => document.getElementById(id);
+const fmt = v  => "$" + Number(v||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const mk  = () => `${CY}-${String(CM).padStart(2,"0")}`;
+const fix = n  => NAMES.includes(n) ? n : NAMES[0];
+const set = (id,v) => { const e=$(id); if(e) e.textContent=v; };
+const htm = (id,v) => { const e=$(id); if(e) e.innerHTML=v; };
+
+// ════════════════════════════════════════════════════════
+// STORAGE
+// ════════════════════════════════════════════════════════
+function save(){
+  try{ localStorage.setItem(SK, JSON.stringify(DATA)); }catch(e){}
+  try{ localStorage.setItem(SK_DEL, JSON.stringify([...DELETED])); }catch(e){}
+}
+function load(){
+  try{ const r=localStorage.getItem(SK); if(r){const d=JSON.parse(r);if(Array.isArray(d))return d;} }catch(e){}
+  return [];
+}
+function loadDel(){
+  try{ const r=localStorage.getItem(SK_DEL); if(r){const d=JSON.parse(r);if(Array.isArray(d))return new Set(d);} }catch(e){}
+  return new Set();
+}
+
+// ════════════════════════════════════════════════════════
+// PARSE SHEET ROW → entry object
+// ════════════════════════════════════════════════════════
+function parseRow(r){
+  let id,type,amount,desc,who,mkey,date;
+  if(Array.isArray(r)){
+    id=String(r[0]||"").trim(); type=String(r[1]||"").trim().toLowerCase();
+    amount=parseFloat(String(r[2]||"").replace(/[$,]/g,""))||0;
+    desc=String(r[3]||"").trim(); who=String(r[4]||"").trim();
+    mkey=String(r[5]||"").trim(); date=String(r[6]||"").trim();
+  } else {
+    id=String(r.id||"").trim(); type=String(r.type||"").trim().toLowerCase();
+    amount=parseFloat(String(r.amount||"0").replace(/[$,]/g,""))||0;
+    desc=String(r.description||"").trim(); who=String(r.paidBy||"").trim();
+    mkey=String(r.monthKey||"").trim(); date=String(r.date||"").trim();
+  }
+  if(!id||id.toLowerCase()==="id") return null;
+  if(type!=="income"&&type!=="expense") return null;
+  if(amount<=0) return null;
+  // Auto-build monthKey if missing or malformed
+  if(!mkey||!/^\d{4}-\d{2}$/.test(mkey)){
+    const d=new Date(date); if(!isNaN(d)) mkey=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+  }
+  if(!mkey||!/^\d{4}-\d{2}$/.test(mkey)) return null;
+  return {id,type,amount,description:desc,paidBy:fix(who),monthKey:mkey,date};
+}
+
+function parseSheet(raw){
+  if(!raw) return null;
+  if(!Array.isArray(raw)){
+    if(raw.data&&Array.isArray(raw.data)) raw=raw.data;
+    else if(raw.rows&&Array.isArray(raw.rows)) raw=raw.rows;
+    else return null;
+  }
+  const out=[];
+  for(const r of raw){ const e=parseRow(r); if(e) out.push(e); }
+  return out;
+}
+
+// ════════════════════════════════════════════════════════
+// GOOGLE SHEETS — JSONP read (GET)
+// ════════════════════════════════════════════════════════
+function sheetRead(){
+  return new Promise((ok,fail)=>{
+    const cb="_jb"+Date.now()+"_"+Math.floor(Math.random()*99999);
+    const s=document.createElement("script");
+    const t=setTimeout(()=>{cleanup();fail(new Error("timeout"));},15000);
+    window[cb]=data=>{cleanup();ok(data);};
+    s.onerror=()=>{cleanup();fail(new Error("network"));};
+    function cleanup(){clearTimeout(t);delete window[cb];s.parentNode&&s.parentNode.removeChild(s);}
+    s.src=GAS+"?callback="+cb+"&nocache="+Date.now();
+    document.head.appendChild(s);
+  });
+}
+
+// ════════════════════════════════════════════════════════
+// GOOGLE SHEETS — POST write
+// ════════════════════════════════════════════════════════
+function sheetWrite(body){
+  return fetch(GAS,{
+    method:"POST", mode:"no-cors",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(body)
+  }).catch(()=>{});
+}
+
+// ════════════════════════════════════════════════════════
+// LIVE BAR UI
+// ════════════════════════════════════════════════════════
+let lastSync=null;
+function setLive(state, txt){
+  const bar=$("livebar"), dot=$("lbdot"), lbtxt=$("lbtxt"), lbtime=$("lbtime");
+  const ldot=$("ldot"), lst=$("lst");
+  bar.className="live-bar "+state;
+  lbtxt.textContent=txt;
+  if(state==="live"){
+    ldot.style.background="var(--green)";
+    lst.textContent="Live";
+    lbtime.textContent=lastSync?"Updated "+lastSync.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"";
+  } else if(state==="syncing"){
+    ldot.style.background="var(--orange2)";
+    lst.textContent="Syncing…";
+    lbtime.textContent="";
+  } else {
+    ldot.style.background="var(--muted)";
+    lst.textContent="Offline";
+    lbtime.textContent="";
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// SYNC — sheet is always source of truth
+// The key insight: on every sync we:
+//   1. Send all pending deletes to sheet
+//   2. Read full sheet
+//   3. Filter out our DELETED ids
+//   4. Merge in any local-only entries not yet on sheet
+// ════════════════════════════════════════════════════════
+let syncing=false;
+
+async function syncData(quiet=false){
+  if(syncing) return;
+  syncing=true;
+  setLive("syncing","Syncing with partner…");
+
+  try{
+    // Step 1: flush all deletes to sheet first (best effort)
+    if(DELETED.size>0){
+      const dels=[...DELETED].map(id=>sheetWrite({action:"delete",id}));
+      await Promise.allSettled(dels);
+    }
+
+    // Step 2: read authoritative sheet data
+    const raw=await sheetRead();
+    const sheet=parseSheet(raw);
+    if(sheet===null) throw new Error("parse failed");
+
+    // Step 3: filter out deleted entries
+    const clean=sheet.filter(e=>!DELETED.has(e.id));
+    const sheetIds=new Set(clean.map(e=>e.id));
+
+    // Step 4: find local entries not yet on sheet
+    const localOnly=DATA.filter(e=>!sheetIds.has(e.id)&&!DELETED.has(e.id));
+
+    // Step 5: merge — sheet wins for existing, local extras appended
+    DATA=[...clean,...localOnly];
+    save();
+    lastSync=new Date();
+    setLive("live",`✅ Live · ${DATA.length} entries · both partners synced`);
+    if(!quiet) toast("✅ Synced! Both partners up to date.","g");
+
+    // Step 6: push local-only entries up to sheet
+    for(const e of localOnly){
+      sheetWrite({action:"add",...e}).catch(()=>{});
+    }
+
+  }catch(err){
+    setLive("offline","⚠️ Could not reach sheet — showing local data");
+    if(!quiet) toast("⚠️ Offline — local data shown. Tap 🔄 to retry.","b");
+  }finally{
+    syncing=false;
+    draw();
+  }
+}
+
+function manualSync(){
+  const b=$("sbtn");
+  if(b){b.disabled=true;b.innerHTML='<div class="mspin"></div> Syncing';}
+  syncData(false).finally(()=>{if(b){b.disabled=false;b.innerHTML="🔄 Sync";}});
+}
+
+// ════════════════════════════════════════════════════════
+// CALCULATE — perfect 50/50 split logic
+//
+//  totalIncome   = all money collected (by both)
+//  totalExpense  = all money paid out (by both)
+//  netProfit     = totalIncome - totalExpense
+//  fairShare     = netProfit / 2  (what each partner should take home)
+//
+//  Each partner's "balance":
+//    collected    = income they personally handled
+//    paid         = expenses they personally paid
+//    actualNet    = collected - paid  (what they currently hold)
+//    fairShare    = netProfit / 2
+//    owes/gets    = fairShare - actualNet
+//
+//  If owes/gets > 0: partner needs to receive money
+//  If owes/gets < 0: partner needs to pay money
+// ════════════════════════════════════════════════════════
+function calc(key){
+  const me  = DATA.filter(e=>e.monthKey===key);
+  const inc = me.filter(e=>e.type==="income");
+  const exp = me.filter(e=>e.type==="expense");
+
+  const tI  = inc.reduce((s,e)=>s+e.amount,0);
+  const tE  = exp.reduce((s,e)=>s+e.amount,0);
+  const net = tI - tE;
+  const fair= net / 2; // each partner's fair share of profit
+
+  const ps  = NAMES.map(n=>{
+    const nInc = inc.filter(e=>e.paidBy===n).reduce((s,e)=>s+e.amount,0);
+    const nExp = exp.filter(e=>e.paidBy===n).reduce((s,e)=>s+e.amount,0);
+    const actual = nInc - nExp;   // what this partner currently holds
+    const adj    = fair - actual; // positive = they should receive, negative = they should pay
+    return {name:n, inc:nInc, exp:nExp, actual, fair, adj};
+  });
+
+  return {me,inc,exp,tI,tE,net,fair,ps};
+}
+
+// ════════════════════════════════════════════════════════
+// DRAW
+// ════════════════════════════════════════════════════════
+function draw(){
+  const key=mk();
+  const C=calc(key);
+
+  set("v-inc", fmt(C.tI));
+  set("v-exp", fmt(C.tE));
+  set("v-net", fmt(C.net));
+  const vn=$("v-net"); if(vn) vn.className="sbox-val "+(C.net>=0?"co":"cr");
+  set("v-each", fmt(C.fair));
+
+  // Partner cards
+  C.ps.forEach((p,i)=>{
+    set("s"+i+"i", fmt(p.inc));
+    set("s"+i+"e", fmt(p.exp));
+    set("s"+i+"n", fmt(p.fair));
+  });
+
+  // Settlement card
+  const se=$("v-settle");
+  if(se){
+    if(C.me.length===0){
+      se.innerHTML="";
+    } else if(Math.abs(C.ps[0].adj)<0.01){
+      se.innerHTML=`<div class="settle even">
+        <div class="settle-t" style="color:var(--green)">✅ All Square — Perfect Split!</div>
+        <div class="settle-body">Both partners have exactly equal shares.<br>No payment needed between you this month.</div>
+      </div>`;
+    } else {
+      // Figure out who pays whom
+      const payer = C.ps[0].adj < 0 ? C.ps[0] : C.ps[1];
+      const receiver = C.ps[0].adj < 0 ? C.ps[1] : C.ps[0];
+      const amount = Math.abs(C.ps[0].adj);
+      se.innerHTML=`<div class="settle warn">
+        <div class="settle-t" style="color:var(--orange2)">⚖️ Settlement Needed</div>
+        <div class="settle-body">
+          <strong style="color:var(--text)">${payer.name}</strong> collected more than their fair share.<br>
+          They need to pay <strong style="color:var(--text)">${receiver.name}</strong>:
+        </div>
+        <span class="settle-amt">${fmt(amount)}</span>
+        <div class="settle-note">
+          How this works: Total profit is <strong>${fmt(C.net)}</strong>. 
+          Each partner's fair share is <strong>${fmt(C.fair)}</strong>.<br>
+          ${payer.name} currently holds <strong>${fmt(payer.actual)}</strong> · ${receiver.name} holds <strong>${fmt(receiver.actual)}</strong>.
+          This payment makes it exactly 50/50.
+        </div>
+      </div>`;
+    }
+  }
+
+  // Recent entries on summary (no actions shown)
+  const le=$("v-list");
+  if(le){
+    if(C.me.length===0){
+      le.innerHTML=`<div class="nodata"><div class="nodata-ico">📭</div><div class="nodata-t">No entries for ${FULL[CM-1]} ${CY}</div><div class="nodata-s">Tap <strong>➕ Add Entry</strong> to record income or expenses.</div></div>`;
+    } else {
+      const recent=[...C.me].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+      le.innerHTML=recent.map(e=>ecard(e,false)).join("")+
+        (C.me.length>5?`<div style="text-align:center;padding:10px 0;font-size:12px;color:var(--orange);font-weight:700;cursor:pointer" onclick="goT('h')">See all ${C.me.length} entries →</div>`:"");
+    }
+  }
+
+  if(tab==="h") drawHist();
+}
+
+// ════════════════════════════════════════════════════════
+// ENTRY CARD
+// ════════════════════════════════════════════════════════
+function ecard(e, showActions=false){
+  const isInc=e.type==="income";
+  const c=isInc?"inc":"exp";
+  const ico=isInc?"💰":"📤";
+  const sign=isInc?"+":"-";
+  const who=e.paidBy===NAMES[0]?"👤":"👥";
+  const actions=showActions?`<div class="ec-actions">
+    <button class="ec-edit" onclick="openEdit('${e.id}')">✏️</button>
+    <button class="ec-del" onclick="doDelete('${e.id}')">🗑</button>
+  </div>`:"";
+  return `<div class="ec ${c}">
+    <div class="ec-ico">${ico}</div>
+    <div class="ec-info">
+      <div class="ec-desc">${e.description}</div>
+      <div class="ec-meta">
+        <span class="ec-badge">${isInc?"Income":"Expense"}</span>
+        <span class="ec-who">${who} ${e.paidBy}</span>
+      </div>
+    </div>
+    <div class="ec-right">
+      <div class="ec-amt">${sign}${fmt(e.amount)}</div>
+      ${actions}
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+// HISTORY
+// ════════════════════════════════════════════════════════
+function drawHist(){
+  const key=mk();
+  const me=[...DATA.filter(e=>e.monthKey===key)].sort((a,b)=>b.date.localeCompare(a.date));
+  const keys=[...new Set(DATA.map(e=>e.monthKey))].sort().reverse();
+  set("ht", FULL[CM-1]+" "+CY);
+  set("hc", me.length+" "+(me.length===1?"entry":"entries"));
+  htm("he", me.length===0
+    ?`<div style="text-align:center;padding:36px;color:var(--muted);font-size:13px">No entries for this month.</div>`
+    :me.map(e=>ecard(e,true)).join(""));
+  htm("hm", keys.length===0?"":
+    `<div class="slbl">All Months</div>`+
+    keys.map(k=>{
+      const rows=DATA.filter(e=>e.monthKey===k);
+      const mI=rows.filter(e=>e.type==="income").reduce((s,e)=>s+e.amount,0);
+      const mE=rows.filter(e=>e.type==="expense").reduce((s,e)=>s+e.amount,0);
+      const mN=mI-mE;
+      const[y,m]=k.split("-").map(Number);
+      return `<div class="mi ${k===key?"cur":""}" onclick="jump('${k}')">
+        <div class="mi-n">${MNS[m-1]} ${y}</div>
+        <div class="mi-v">
+          <span class="miv cg">${fmt(mI)}</span>
+          <span class="miv cr">-${fmt(mE)}</span>
+          <span class="miv ${mN>=0?"co":"cr"}">${fmt(mN)}</span>
+        </div>
+      </div>`;
+    }).join(""));
+}
+
+function jump(k){const[y,m]=k.split("-").map(Number);CY=y;CM=m;updM();draw();goT("s");}
+
+// ════════════════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════════════════
+function goT(t){
+  tab=t;
+  ["s","a","h"].forEach(x=>{
+    $("pg-"+x).classList.toggle("on",x===t);
+    $("nb-"+x).classList.toggle("on",x===t);
+  });
+  if(t==="h") drawHist();
+  $("pg-"+t).scrollTop=0;
+}
+function updM(){ set("mlbl",FULL[CM-1]+" "+CY); set("f-mlbl",MNS[CM-1]+" "+CY); }
+function prevM(){CM--;if(CM<1){CM=12;CY--;}updM();draw();}
+function nextM(){CM++;if(CM>12){CM=1;CY++;}updM();draw();}
+
+// ════════════════════════════════════════════════════════
+// ADD FORM
+// ════════════════════════════════════════════════════════
+function setT(t){
+  eT=t;
+  $("ti").className="tog "+(t==="income"?"ti":"");
+  $("te").className="tog "+(t==="expense"?"te":"");
+  $("dico").textContent=t==="income"?"🏠":"🧾";
+  $("fi").placeholder=t==="income"?"e.g. Junk removal – Oak Street":"e.g. Dump fee, gas, supplies";
+  $("wlbl").textContent=t==="income"?"Who collected this money?":"Who paid this expense?";
+  $("savebtn").textContent="☁️ Save "+(t==="income"?"Income":"Expense");
+}
+function setW(i){
+  eW=i;
+  $("wb0").className="wb "+(i===0?"ws":"");
+  $("wb1").className="wb "+(i===1?"wr":"");
+}
+
+async function doSave(){
+  const desc=($("fi").value||"").trim();
+  const amt=parseFloat($("fa").value||"0");
+  if(!desc){toast("Please enter a description","r");return;}
+  if(!amt||amt<=0){toast("Please enter a valid amount","r");return;}
+
+  const entry={
+    id:String(Date.now())+"_"+Math.floor(Math.random()*9999),
+    type:eT, amount:amt, description:desc,
+    paidBy:NAMES[eW], monthKey:mk(),
+    date:new Date().toISOString()
+  };
+
+  // Add locally first so UI updates immediately
+  DATA.push(entry); save(); draw();
+  $("fi").value=""; $("fa").value="";
+  toast(`${eT==="income"?"💰":"📤"} Saved! Syncing to partner…`,"g");
+
+  const btn=$("savebtn"); btn.disabled=true; btn.textContent="Syncing…";
+  try{
+    await sheetWrite({action:"add",...entry});
+    await syncData(true);
+    toast("✅ Both partners updated!","g");
+  }catch(e){
+    toast("Saved locally. Tap 🔄 to sync with partner.","b");
+  }finally{
+    btn.disabled=false; setT(eT);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// DELETE — marks permanently, syncs to both
+// ════════════════════════════════════════════════════════
+async function doDelete(id){
+  if(!confirm("Delete this entry? This will remove it for both partners.")) return;
+  DELETED.add(id);
+  DATA=DATA.filter(e=>e.id!==id);
+  save(); draw();
+  toast("Deleted — syncing to partner…","b");
+  try{
+    await sheetWrite({action:"delete",id});
+    await syncData(true);
+    toast("✅ Deleted for both partners!","g");
+  }catch(e){
+    toast("Deleted locally. Tap 🔄 to sync.","b");
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// EDIT
+// ════════════════════════════════════════════════════════
+function openEdit(id){
+  const entry=DATA.find(e=>e.id===id);
+  if(!entry) return;
+  editId=id; eET=entry.type;
+  eEW=NAMES.indexOf(entry.paidBy)>=0?NAMES.indexOf(entry.paidBy):0;
+  $("efi").value=entry.description;
+  $("efa").value=entry.amount;
+  setET(eET); setEW(eEW);
+  $("edit-modal").classList.remove("hidden");
+}
+function closeEditModal(){ $("edit-modal").classList.add("hidden"); editId=null; }
+function setET(t){
+  eET=t;
+  $("eti").className="tog "+(t==="income"?"ti":"");
+  $("ete").className="tog "+(t==="expense"?"te":"");
+  $("edico").textContent=t==="income"?"🏠":"🧾";
+}
+function setEW(i){
+  eEW=i;
+  $("ewb0").className="wb "+(i===0?"ws":"");
+  $("ewb1").className="wb "+(i===1?"wr":"");
+}
+
+async function doEdit(){
+  if(!editId) return;
+  const desc=($("efi").value||"").trim();
+  const amt=parseFloat($("efa").value||"0");
+  if(!desc){toast("Enter a description","r");return;}
+  if(!amt||amt<=0){toast("Enter a valid amount","r");return;}
+
+  const idx=DATA.findIndex(e=>e.id===editId);
+  if(idx===-1){toast("Entry not found","r");return;}
+
+  DATA[idx]={...DATA[idx],type:eET,amount:amt,description:desc,paidBy:NAMES[eEW]};
+  const updated=DATA[idx];
+  save(); draw(); closeEditModal();
+  toast("Updated — syncing to partner…","b");
+  try{
+    // Send as edit action — GAS updates row in place
+    await sheetWrite({action:"edit",...updated});
+    await syncData(true);
+    toast("✅ Updated for both partners!","g");
+  }catch(e){
+    toast("Updated locally. Tap 🔄 to sync.","b");
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════════════════
+function toast(msg,type="g"){
+  const el=$("toast");
+  el.textContent=msg; el.className="toast t"+type;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add("show")));
+  clearTimeout(window._t);
+  window._t=setTimeout(()=>el.classList.remove("show"),3400);
+}
+
+// ════════════════════════════════════════════════════════
+// SERVICE WORKER
+// ════════════════════════════════════════════════════════
+if("serviceWorker"in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+
+// ════════════════════════════════════════════════════════
+// BOOT
+// ════════════════════════════════════════════════════════
+DATA    = load();
+DELETED = loadDel();
+updM(); setT("income"); setW(0);
+
+let p=0;
+const si=setInterval(()=>{
+  p+=25; $("spf").style.width=p+"%";
+  if(p>=100){
+    clearInterval(si);
+    setTimeout(()=>{
+      const sp=$("splash");
+      sp.style.opacity="0"; sp.style.transition="opacity .3s";
+      setTimeout(()=>sp.style.display="none",300);
+      $("app").style.display="flex";
+      setLive("syncing","Connecting to Google Sheets…");
+      draw();
+      syncData(false); // full sync with notification on boot
+    },100);
+  }
+},80);
+
+// Auto-sync every 20 seconds — catches partner changes fast
+setInterval(()=>syncData(true), 20000);
+
+// Sync on network restore
+window.addEventListener("online", ()=>syncData(false));
+
+// Sync when app comes back to foreground (switching tabs/apps)
+document.addEventListener("visibilitychange", ()=>{
+  if(!document.hidden) syncData(true);
+});
+</script>
+</body>
+</html>
